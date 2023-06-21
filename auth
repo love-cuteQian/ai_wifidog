@@ -1,0 +1,37 @@
+#!/usr/bin/lua
+local nixio = require("nixio")
+local jsonc = require "luci.jsonc"
+
+-- HTTP header
+print("Content-Type: application/json\n")
+
+local source_ip = nixio.getenv("REMOTE_ADDR")
+io.popen("logger -t ai_auth source_ip: " .. source_ip)
+
+local req = nixio.getenv("QUERY_STRING")
+req = string.gsub(req, '&', ' ')
+io.popen("logger -t ai_auth get:" .. req)
+
+if req == "stage=counters_v2" then
+  local POSTLength = tonumber(os.getenv("CONTENT_LENGTH")) or 0
+  if (POSTLength > 0) then
+    local req = io.read(POSTLength)
+    io.popen("logger -t ai_auth post data:" .. req)
+    local data = jsonc.parse(req)
+
+    local result = {
+      gw_id = data.gw_id,
+      auth_op = {}
+    }
+    for key, value in ipairs(data.clients)
+    do
+      table.insert(result.auth_op, { id = value.id, auth_code = 1 })
+    end
+    local resStr = jsonc.stringify(result)
+    io.popen("logger -t ai_auth post result:" .. resStr)
+    print(resStr)
+  end
+end
+
+os.execute("sleep 1")
+print("Auth: 1")
