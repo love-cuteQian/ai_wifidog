@@ -1271,23 +1271,28 @@ int iptables_fw_counters_update(void)
   LOCK_CLIENT_LIST();
   reset_client_list();
   UNLOCK_CLIENT_LIST();
+
   char buf[1024] = {0};
-  while (fgets(buf, sizeof(buf), output) != NULL)
-  {
-    debug(LOG_WARNING, "ai_log %s", buf);
-  }
+  fpos_t pos;
 
   /* skip the first two lines */
   while (('\n' != fgetc(output)) && !feof(output))
     ;
   while (('\n' != fgetc(output)) && !feof(output))
     ;
+  fgetpos(output, &pos);
+  while (fgets(buf, sizeof(buf), output) != NULL)
+  {
+    debug(LOG_WARNING, "ai_log firewall rule lines: %s", buf);
+  }
+  fsetpos(output, &pos);
+
   while (output && !(feof(output)))
   {
-    while (fgets(buf, sizeof(buf), output) != NULL)
-    {
-      debug(LOG_WARNING, "ai_log %s", buf);
-    }
+    fgetpos(output, &pos);
+    fgets(buf, sizeof(buf), output);
+    fsetpos(output, &pos);
+    debug(LOG_WARNING, "ai_log firewall out_going current rule line: %s", buf);
     rc = fscanf(output, "%*s %llu %*s %*s %*s %*s %*s %15[0-9.] %*s %*s %*s %*s %*s %*s", &counter, ip);
     // rc = fscanf(output, "%*s %llu %*s %*s %*s %*s %*s %15[0-9.] %*s %*s %*s %*s %*s 0x%*u", &counter, ip);
     if (2 == rc && EOF != rc)
