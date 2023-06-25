@@ -1280,58 +1280,59 @@ int iptables_fw_counters_update(void)
   while (('\n' != fgetc(output)) && !feof(output))
     ;
 
-  while (output && !(feof(output)))
+  while (fgets(buf, sizeof(buf), output) != NULL)
   {
-    long offset = ftell(output);
-    rc = fscanf(output, "%*s %llu %*s %*s %*s %*s %*s %15[0-9.] %*s %*s %*s %*s %*s %*s", &counter, ip);
+    char *p = strtok(buf, " ");
+    int i = -1;
 
-    fseek(output, offset, SEEK_CUR);
-    fgets(buf, sizeof(buf), output);
-    debug(LOG_WARNING, "ai_log firewall out_going current rule line: %s, ip: %s, counter: %llu, rc: %d", buf, ip, counter, rc);
-    // rc = fscanf(output, "%*s %llu %*s %*s %*s %*s %*s %15[0-9.] %*s %*s %*s %*s %*s 0x%*u", &counter, ip);
-    if (2 == rc && EOF != rc)
+    if (p)
     {
-      /* Sanity */
-      if (!inet_aton(ip, &tempaddr))
-      {
-        debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
-        continue;
-      }
-      debug(LOG_DEBUG, "Read outgoing traffic for %s: Bytes=%llu", ip, counter);
-      LOCK_CLIENT_LIST();
-      if ((p1 = client_list_find_by_ip(ip)))
-      {
-        if ((p1->counters.outgoing - p1->counters.outgoing_history) < counter)
-        {
-          p1->counters.outgoing_delta = p1->counters.outgoing_history + counter - p1->counters.outgoing;
-          p1->counters.outgoing = p1->counters.outgoing_history + counter;
-          p1->counters.last_updated = time(NULL);
-          debug(LOG_DEBUG, "%s - Outgoing traffic %llu bytes, updated counter.outgoing to %llu bytes.  Updated last_updated to %d", ip,
-                counter, p1->counters.outgoing, p1->counters.last_updated);
-          p1->is_online = 1;
-        }
+      i++;
+    }
 
-        // get client name
-        if (p1->name == NULL)
-          __get_client_name(p1);
-
-        if (p1->wired == -1)
-        {
-          p1->wired = br_is_device_wired(p1->mac);
-        }
-        UNLOCK_CLIENT_LIST();
-      }
-      else
+    while (p = strtok(NULL, " "))
+    { // 使用第一个参数为NULL来提取子串
+      i++;
+      if (i == 1)
       {
-        UNLOCK_CLIENT_LIST();
-        debug(LOG_ERR,
-              "iptables_fw_counters_update(): Could not find %s in client list, this should not happen unless if the gateway crashed",
-              ip);
-        debug(LOG_ERR, "Preventively deleting firewall rules for %s in table %s", ip, CHAIN_OUTGOING);
-        __iptables_fw_destroy_mention("mangle", CHAIN_OUTGOING, ip, NULL, 5);
-        debug(LOG_ERR, "Preventively deleting firewall rules for %s in table %s", ip, CHAIN_INCOMING);
-        __iptables_fw_destroy_mention("mangle", CHAIN_INCOMING, ip, NULL, 5);
+        counter = atoll(p);
       }
+      else if (i == 7)
+      {
+        strcpy(ip, p);
+      }
+    }
+    debug(LOG_WARNING, "ai_log firewall out_going current rule line: %s, ip: %s, counter: %llu", ip, counter);
+    // rc = fscanf(output, "%*s %llu %*s %*s %*s %*s %*s %15[0-9.] %*s %*s %*s %*s %*s 0x%*u", &counter, ip);
+    /* Sanity */
+    if (!inet_aton(ip, &tempaddr))
+    {
+      debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
+      continue;
+    }
+    debug(LOG_DEBUG, "Read outgoing traffic for %s: Bytes=%llu", ip, counter);
+    LOCK_CLIENT_LIST();
+    if ((p1 = client_list_find_by_ip(ip)))
+    {
+      if ((p1->counters.outgoing - p1->counters.outgoing_history) < counter)
+      {
+        p1->counters.outgoing_delta = p1->counters.outgoing_history + counter - p1->counters.outgoing;
+        p1->counters.outgoing = p1->counters.outgoing_history + counter;
+        p1->counters.last_updated = time(NULL);
+        debug(LOG_DEBUG, "%s - Outgoing traffic %llu bytes, updated counter.outgoing to %llu bytes.  Updated last_updated to %d", ip,
+              counter, p1->counters.outgoing, p1->counters.last_updated);
+        p1->is_online = 1;
+      }
+
+      // get client name
+      if (p1->name == NULL)
+        __get_client_name(p1);
+
+      if (p1->wired == -1)
+      {
+        p1->wired = br_is_device_wired(p1->mac);
+      }
+      UNLOCK_CLIENT_LIST();
     }
   }
   pclose(output);
