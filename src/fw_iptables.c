@@ -1273,7 +1273,6 @@ int iptables_fw_counters_update(void)
   UNLOCK_CLIENT_LIST();
 
   char buf[1024] = {0};
-  fpos_t pos;
 
   /* skip the first two lines */
   while (('\n' != fgetc(output)) && !feof(output))
@@ -1283,10 +1282,10 @@ int iptables_fw_counters_update(void)
 
   while (output && !(feof(output)))
   {
-    fgetpos(output, &pos);
+    long offset = ftell(output);
     rc = fscanf(output, "%*s %llu %*s %*s %*s %*s %*s %15[0-9.] %*s %*s %*s %*s %*s %*s", &counter, ip);
 
-    fsetpos(output, &pos);
+    fseek(output, offset, SEEK_CUR);
     fgets(buf, sizeof(buf), output);
     debug(LOG_WARNING, "ai_log firewall out_going current rule line: %s, ip: %s, counter: %llu, rc: %d", buf, ip, counter, rc);
     // rc = fscanf(output, "%*s %llu %*s %*s %*s %*s %*s %15[0-9.] %*s %*s %*s %*s %*s 0x%*u", &counter, ip);
