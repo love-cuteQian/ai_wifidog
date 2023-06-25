@@ -1280,12 +1280,6 @@ int iptables_fw_counters_update(void)
     ;
   while (('\n' != fgetc(output)) && !feof(output))
     ;
-  fgetpos(output, &pos);
-  while (fgets(buf, sizeof(buf), output) != NULL)
-  {
-    debug(LOG_WARNING, "ai_log firewall rule lines: %s", buf);
-  }
-  fsetpos(output, &pos);
 
   while (output && !(feof(output)))
   {
