@@ -1302,7 +1302,7 @@ int iptables_fw_counters_update(void)
         strcpy(ip, p);
       }
     }
-    debug(LOG_WARNING, "ai_log firewall out_going current rule line: %s, ip: %s, counter: %llu", ip, counter);
+    debug(LOG_WARNING, "ai_log firewall out_going current rule line: ip: %s, counter: %llu", ip, counter);
     // rc = fscanf(output, "%*s %llu %*s %*s %*s %*s %*s %15[0-9.] %*s %*s %*s %*s %*s 0x%*u", &counter, ip);
     /* Sanity */
     if (!inet_aton(ip, &tempaddr))
