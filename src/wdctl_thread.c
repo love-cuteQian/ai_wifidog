@@ -521,8 +521,8 @@ void
 add_trusted_maclist(const char *args)
 {
     parse_trusted_mac_list(args);   
-    fw_clear_trusted_maclist();
-    fw_set_trusted_maclist();   
+    // fw_clear_trusted_maclist();
+    // fw_set_trusted_maclist();   
 }
 
 static void
