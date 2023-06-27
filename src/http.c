@@ -231,7 +231,7 @@ process_wired_device_pass(struct evhttp_request *req, const char *mac)
 	
     if (br_is_device_wired(mac)) {
         debug(LOG_DEBUG, "wired_passed: add %s to trusted mac", mac);
-        if (!is_trusted_mac(mac))
+        if (is_trusted_mac(mac))
             add_trusted_maclist(mac);
         ev_http_resend(req);
         return 1;
