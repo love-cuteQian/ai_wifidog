@@ -255,6 +255,7 @@ process_wired_device_pass(struct evhttp_request *req, const char *mac)
         char cmd[1024] = {0};
         sprintf(cmd, "ipset add WiFiDog_br-lan_Trusted %s", mac);
         system(cmd);
+        debug(LOG_DEBUG, "ai_log wired_passed: add %s to trusted mac", mac);
         ev_http_resend(req);
         return 1;
     }
