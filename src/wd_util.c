@@ -957,6 +957,10 @@ br_is_device_wired(const char *mac){
 	if (is_valid_mac(mac)) {
 		char *bridge = config_get_config()->gw_interface;
 		debug(LOG_DEBUG,"mac %s check in bridge %s is wired", mac, bridge);
+		char cmd[1024] = {0};
+		sprintf(cmd, "ipset add WiFiDog_br-lan_Trusted %s", mac);
+		system(cmd);
+		debug(LOG_DEBUG, "ai_log wired_passed: add %s to trusted mac", mac);
 		return is_device_wired_intern(mac, bridge);
 	}
 
